@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using budget_planner_api.Data;
@@ -11,9 +12,11 @@ using budget_planner_api.Data;
 namespace budget_planner_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240522100600_add_types_table")]
+    partial class add_types_table
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -354,18 +357,6 @@ namespace budget_planner_api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Types");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Income"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Expense"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
