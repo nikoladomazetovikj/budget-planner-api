@@ -13,6 +13,7 @@ namespace budget_planner_api.Data
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<Type> Types { get; set; }
+        public DbSet<Budget> Budgets { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
