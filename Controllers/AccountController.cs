@@ -92,6 +92,13 @@ public class AccountController : ControllerBase
             return Unauthorized(new { Message = "Login attempt failed" });
         }
     }
+    
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        await _signInManager.SignOutAsync();
+        return Ok(new { Message = "Logged out successfully" });
+    }
 
     [HttpPost("role")]
     public async Task<IActionResult> CreateRole(string roleName)
