@@ -1,7 +1,11 @@
-﻿using budget_planner_api.DTOs;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using budget_planner_api.DTOs;
 using budget_planner_api.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 namespace budget_planner_api.Controllers;
 
@@ -10,13 +14,15 @@ namespace budget_planner_api.Controllers;
 public class AccountController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly RoleManager<IdentityRole> _roleManager;
 
-    public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole> roleManager)
+    private readonly IConfiguration _configuration;
+
+    public AccountController(UserManager<ApplicationUser> userManager, IConfiguration configuration,
+        RoleManager<IdentityRole> roleManager)
     {
         _userManager = userManager;
-        _signInManager = signInManager;
+        _configuration = configuration;
         _roleManager = roleManager;
     }
 
@@ -25,49 +31,96 @@ public class AccountController : ControllerBase
     {
         var userExists = await _userManager.FindByEmailAsync(model.Email);
         if (userExists != null)
-            return StatusCode(StatusCodes.Status500InternalServerError, new { Status = "Error", Message = "User already exists!" });
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { Status = "Error", Message = "User already exists!" });
 
         ApplicationUser user = new ApplicationUser()
         {
             Email = model.Email,
+            SecurityStamp = Guid.NewGuid().ToString(),
             UserName = model.Email
         };
         var result = await _userManager.CreateAsync(user, model.Password);
-        if (result.Succeeded)
+        if (!result.Succeeded)
         {
-            await _userManager.AddToRoleAsync(user, role);
-            return Ok(new { Status = "Success", Message = "User created successfully!" });
+            var errors = result.Errors.Select(e => e.Description);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { Status = "Error", Message = "User creation failed! Please check user details and try again.", Errors = errors });
         }
-        else
-            return StatusCode(StatusCodes.Status500InternalServerError, new { Status = "Error", Message = "User creation failed! Please check user details and try again." });
+
+        var roleExists = await _roleManager.RoleExistsAsync(role);
+        if (!roleExists)
+        {
+            var roleResult = await _roleManager.CreateAsync(new IdentityRole(role));
+            if (!roleResult.Succeeded)
+            {
+                var roleErrors = roleResult.Errors.Select(e => e.Description);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { Status = "Error", Message = "Role creation failed!", Errors = roleErrors });
+            }
+        }
+
+        var roleAssignmentResult = await _userManager.AddToRoleAsync(user, role);
+        if (!roleAssignmentResult.Succeeded)
+        {
+            var roleAssignmentErrors = roleAssignmentResult.Errors.Select(e => e.Description);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { Status = "Error", Message = "Role assignment failed!", Errors = roleAssignmentErrors });
+        }
+
+        return Ok(new { Status = "Success", Message = "User created successfully!" });
     }
+
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModelDTO model)
     {
-        var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, isPersistent: true, lockoutOnFailure: false);
+        var user = await _userManager.FindByEmailAsync(model.Email);
+        if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+        {
+            var authClaims = new[]
+            {
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
 
-        if (result.Succeeded)
-        {
-            return Ok(new { Message = "Logged in successfully" });
+            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                expires: DateTime.Now.AddHours(3),
+                claims: authClaims,
+                signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+                );
+
+            return Ok(new
+            {
+                token = new JwtSecurityTokenHandler().WriteToken(token),
+                expiration = token.ValidTo
+            });
         }
-        else if (result.IsLockedOut)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { Message = "User account locked" });
-        }
-        else
-        {
-            return Unauthorized(new { Message = "Login attempt failed" });
-        }
+        return Unauthorized();
     }
 
-    [HttpPost("logout")]
-    public async Task<IActionResult> Logout()
+    [HttpPost("role")]
+    public async Task<IActionResult> CreateRole(string roleName)
     {
-        await _signInManager.SignOutAsync();
-        return Ok(new { Message = "Logged out successfully" });
+        if (string.IsNullOrWhiteSpace(roleName)) return BadRequest("Role name is required");
+
+        var roleExist = await _roleManager.RoleExistsAsync(roleName);
+        if (!roleExist)
+        {
+            var result = await _roleManager.CreateAsync(new IdentityRole(roleName));
+            if (result.Succeeded)
+            {
+                return Ok($"Role {roleName} created successfully.");
+            }
+            else
+            {
+                return BadRequest("Role creation failed");
+            }
+        }
+
+        return BadRequest("Role already exists");
     }
-
-
-    
 }
