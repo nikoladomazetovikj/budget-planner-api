@@ -15,15 +15,17 @@ public class AccountController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
 
     private readonly IConfiguration _configuration;
 
     public AccountController(UserManager<ApplicationUser> userManager, IConfiguration configuration,
-        RoleManager<IdentityRole> roleManager)
+        RoleManager<IdentityRole> roleManager, SignInManager<ApplicationUser> signInManager)
     {
         _userManager = userManager;
         _configuration = configuration;
         _roleManager = roleManager;
+        _signInManager = signInManager;
     }
 
     [HttpPost("register")]
@@ -75,31 +77,20 @@ public class AccountController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModelDTO model)
     {
-        var user = await _userManager.FindByEmailAsync(model.Email);
-        if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+        var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, isPersistent: true, lockoutOnFailure: false);
+
+        if (result.Succeeded)
         {
-            var authClaims = new[]
-            {
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
-
-            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                expires: DateTime.Now.AddHours(3),
-                claims: authClaims,
-                signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-                );
-
-            return Ok(new
-            {
-                token = new JwtSecurityTokenHandler().WriteToken(token),
-                expiration = token.ValidTo
-            });
+            return Ok(new { Message = "Logged in successfully" });
         }
-        return Unauthorized();
+        else if (result.IsLockedOut)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { Message = "User account locked" });
+        }
+        else
+        {
+            return Unauthorized(new { Message = "Login attempt failed" });
+        }
     }
 
     [HttpPost("role")]
