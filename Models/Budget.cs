@@ -26,5 +26,5 @@ public class Budget
     public Type Type { get; set; }
     
     [Required]
-    public ApplicationUser User { get; set; }
+    public string UserId { get; set; }
 }

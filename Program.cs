@@ -1,7 +1,9 @@
 using budget_planner_api.Data;
 using budget_planner_api.Models;
+using budget_planner_api.Repositories.BudgetRepository;
 using budget_planner_api.Repositories.CategoryRepository;
 using budget_planner_api.Repositories.TypeRepository;
+using budget_planner_api.Services.BudgetService;
 using budget_planner_api.Services.CategoryService;
 using budget_planner_api.Services.TypeService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -12,7 +14,14 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
+
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(option =>
@@ -74,6 +83,8 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ITypeRepository, TypeRepository>();
 builder.Services.AddScoped<ITypeService, TypeService>();
+builder.Services.AddScoped<IBudgetRepository, BudgetRepository>();
+builder.Services.AddScoped<IBudgetService, BudgetService>();
 
 builder.Services.AddAutoMapper(typeof(Program));
 
