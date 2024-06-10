@@ -1,4 +1,5 @@
 ﻿using budget_planner_api.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Type = budget_planner_api.Models.Type;
@@ -7,10 +8,12 @@ namespace budget_planner_api.Data
 {
     public class AppDbContext : IdentityDbContext<ApplicationUser>
     {
+        public readonly RoleManager<IdentityRole> _roleManager;
+        
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
-
+        
         public DbSet<Category> Categories { get; set; }
         public DbSet<Type> Types { get; set; }
         public DbSet<Budget> Budgets { get; set; }
@@ -47,6 +50,14 @@ namespace budget_planner_api.Data
                 new Type { Id = 1, Name = "Income" },
                 new Type { Id = 2, Name = "Expense" }
             );
+        }
+        
+        public async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
+        {
+            if (!await roleManager.RoleExistsAsync("Admin"))
+            {
+                await roleManager.CreateAsync(new IdentityRole("Admin"));
+            }
         }
     }
 }

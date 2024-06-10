@@ -99,26 +99,5 @@ public class AccountController : ControllerBase
         await _signInManager.SignOutAsync();
         return Ok(new { Message = "Logged out successfully" });
     }
-
-    [HttpPost("role")]
-    public async Task<IActionResult> CreateRole(string roleName)
-    {
-        if (string.IsNullOrWhiteSpace(roleName)) return BadRequest("Role name is required");
-
-        var roleExist = await _roleManager.RoleExistsAsync(roleName);
-        if (!roleExist)
-        {
-            var result = await _roleManager.CreateAsync(new IdentityRole(roleName));
-            if (result.Succeeded)
-            {
-                return Ok($"Role {roleName} created successfully.");
-            }
-            else
-            {
-                return BadRequest("Role creation failed");
-            }
-        }
-
-        return BadRequest("Role already exists");
-    }
+    
 }
