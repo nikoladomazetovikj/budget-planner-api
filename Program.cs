@@ -1,7 +1,9 @@
 using budget_planner_api.Data;
 using budget_planner_api.Models;
 using budget_planner_api.Repositories.CategoryRepository;
+using budget_planner_api.Repositories.TypeRepository;
 using budget_planner_api.Services.CategoryService;
+using budget_planner_api.Services.TypeService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -70,6 +72,8 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ITypeRepository, TypeRepository>();
+builder.Services.AddScoped<ITypeService, TypeService>();
 
 builder.Services.AddAutoMapper(typeof(Program));
 
