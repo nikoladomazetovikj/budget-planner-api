@@ -28,28 +28,32 @@ public class AccountController : ControllerBase
         _signInManager = signInManager;
     }
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterModelDTO model, string role = "Admin")
+     [HttpPost("register")]
+    public async Task<IActionResult> RegisterUser([FromBody] RegisterModelDTO model, string role = "Admin")
     {
-        var userExists = await _userManager.FindByEmailAsync(model.Email);
-        if (userExists != null)
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { Status = "Error", Message = "User already exists!" });
+        var checkIfExists = await _userManager.FindByEmailAsync(model.Email);
 
-        ApplicationUser user = new ApplicationUser()
+        if (checkIfExists != null)
+        {
+            return BadRequest("User with this email address already exists");
+        }
+
+        ApplicationUser applicationUser = new ApplicationUser()
         {
             Email = model.Email,
             SecurityStamp = Guid.NewGuid().ToString(),
             UserName = model.Email
         };
-        var result = await _userManager.CreateAsync(user, model.Password);
-        if (!result.Succeeded)
-        {
-            var errors = result.Errors.Select(e => e.Description);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { Status = "Error", Message = "User creation failed! Please check user details and try again.", Errors = errors });
-        }
 
+        var newUser = await _userManager.CreateAsync(applicationUser, model.Password);
+        
+        if (!newUser.Succeeded)
+        {
+            var errors = newUser.Errors.Select(e => e.Description);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { Status = "Error", Message = "User creation failed", Errors = errors });
+        }
+        
         var roleExists = await _roleManager.RoleExistsAsync(role);
         if (!roleExists)
         {
@@ -58,32 +62,37 @@ public class AccountController : ControllerBase
             {
                 var roleErrors = roleResult.Errors.Select(e => e.Description);
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new { Status = "Error", Message = "Role creation failed!", Errors = roleErrors });
+                    new { Status = "Error", Message = "Role creation failed", Errors = roleErrors });
             }
         }
 
-        var roleAssignmentResult = await _userManager.AddToRoleAsync(user, role);
+        var roleAssignmentResult = await _userManager.AddToRoleAsync(applicationUser, role);
         if (!roleAssignmentResult.Succeeded)
         {
             var roleAssignmentErrors = roleAssignmentResult.Errors.Select(e => e.Description);
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { Status = "Error", Message = "Role assignment failed!", Errors = roleAssignmentErrors });
+                new { Status = "Error", Message = "Cannot assign role to user", Errors = roleAssignmentErrors });
         }
 
-        return Ok(new { Status = "Success", Message = "User created successfully!" });
-    }
+        var token = GenerateJwtToken(applicationUser);
 
+        return Ok(new { Status = "Success", Message = "User created", Token = token });
+    }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModelDTO model)
     {
-        var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, isPersistent: true, lockoutOnFailure: false);
+        var res = await _signInManager.PasswordSignInAsync(userName: model.Email, password: model.Password, isPersistent: true, lockoutOnFailure: false);
 
-        if (result.Succeeded)
+        if (res.Succeeded)
         {
-            return Ok(new { Message = "Logged in successfully" });
+            // Fetch the user to generate the token
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            var token = GenerateJwtToken(user);
+
+            return Ok(new { Message = "Logged in successfully", Token = token });
         }
-        else if (result.IsLockedOut)
+        else if (res.IsLockedOut)
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { Message = "User account locked" });
         }
@@ -91,6 +100,28 @@ public class AccountController : ControllerBase
         {
             return Unauthorized(new { Message = "Login attempt failed" });
         }
+    }
+
+    
+    private string GenerateJwtToken(ApplicationUser user)
+    {
+        var authClaims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, user.UserName),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+
+        var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Key"]));
+
+        var token = new JwtSecurityToken(
+            issuer: _configuration["JWT:Issuer"],
+            audience: _configuration["JWT:Audience"],
+            expires: DateTime.Now.AddHours(3),
+            claims: authClaims,
+            signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
     
     [HttpPost("logout")]
