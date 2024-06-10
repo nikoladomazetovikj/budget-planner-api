@@ -29,7 +29,7 @@ public class AccountController : ControllerBase
     }
 
      [HttpPost("register")]
-    public async Task<IActionResult> RegisterUser([FromBody] RegisterModelDTO model, string role = "Admin")
+    public async Task<IActionResult> RegisterUser([FromBody] RegisterModelDTO model)
     {
         var checkIfExists = await _userManager.FindByEmailAsync(model.Email);
 
@@ -54,10 +54,10 @@ public class AccountController : ControllerBase
                 new { Status = "Error", Message = "User creation failed", Errors = errors });
         }
         
-        var roleExists = await _roleManager.RoleExistsAsync(role);
+        var roleExists = await _roleManager.RoleExistsAsync("Admin");
         if (!roleExists)
         {
-            var roleResult = await _roleManager.CreateAsync(new IdentityRole(role));
+            var roleResult = await _roleManager.CreateAsync(new IdentityRole("Admin"));
             if (!roleResult.Succeeded)
             {
                 var roleErrors = roleResult.Errors.Select(e => e.Description);
@@ -66,7 +66,7 @@ public class AccountController : ControllerBase
             }
         }
 
-        var roleAssignmentResult = await _userManager.AddToRoleAsync(applicationUser, role);
+        var roleAssignmentResult = await _userManager.AddToRoleAsync(applicationUser, "Admin");
         if (!roleAssignmentResult.Succeeded)
         {
             var roleAssignmentErrors = roleAssignmentResult.Errors.Select(e => e.Description);

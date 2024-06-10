@@ -1,5 +1,7 @@
 using budget_planner_api.Data;
 using budget_planner_api.Models;
+using budget_planner_api.Repositories.CategoryRepository;
+using budget_planner_api.Services.CategoryService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -66,7 +68,8 @@ builder.Services.AddAuthentication(options =>
 
 
 
-
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 builder.Services.AddAutoMapper(typeof(Program));
 
@@ -86,10 +89,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-using (var scope = app.Services.CreateScope())
-{
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await dbContext.SeedRolesAsync(roleManager);
-}
 app.Run();
