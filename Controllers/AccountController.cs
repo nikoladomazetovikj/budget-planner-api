@@ -28,7 +28,7 @@ public class AccountController : ControllerBase
         _signInManager = signInManager;
     }
 
-     [HttpPost("register")]
+    [HttpPost("register")]
     public async Task<IActionResult> RegisterUser([FromBody] RegisterModelDTO model)
     {
         var checkIfExists = await _userManager.FindByEmailAsync(model.Email);
@@ -76,7 +76,7 @@ public class AccountController : ControllerBase
 
         var token = GenerateJwtToken(applicationUser);
 
-        return Ok(new { Status = "Success", Message = "User created", Token = token });
+        return Ok(new { Status = "Success", Message = "User created", Token = token, Name = applicationUser.UserName , UserId = applicationUser.Id });
     }
 
     [HttpPost("login")]
@@ -90,7 +90,7 @@ public class AccountController : ControllerBase
             var user = await _userManager.FindByEmailAsync(model.Email);
             var token = GenerateJwtToken(user);
 
-            return Ok(new { Message = "Logged in successfully", Token = token });
+            return Ok(new { Message = "Logged in successfully", Token = token,  Name = user.UserName , UserId = user.Id  });
         }
         else if (res.IsLockedOut)
         {
@@ -102,7 +102,6 @@ public class AccountController : ControllerBase
         }
     }
 
-    
     private string GenerateJwtToken(ApplicationUser user)
     {
         var authClaims = new List<Claim>
@@ -130,5 +129,4 @@ public class AccountController : ControllerBase
         await _signInManager.SignOutAsync();
         return Ok(new { Message = "Logged out successfully" });
     }
-    
 }
