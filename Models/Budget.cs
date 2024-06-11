@@ -15,7 +15,7 @@ public class Budget
     public string Description { get; set; }
     
     [Required]
-    public DateOnly OnDate { get; set; }
+    public DateTime OnDate { get; set; }
     
     [Required]
     public int CategoryId { get; set; }

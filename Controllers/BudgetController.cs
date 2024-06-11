@@ -27,7 +27,7 @@ public class BudgetController : ControllerBase
     
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> AddBudget([FromBody] BudgetModelDTO budgetDto)
+    public async Task<IActionResult> AddBudgetAsync([FromBody] BudgetModelDTO budgetDto)
     {
         if (!ModelState.IsValid)
         {

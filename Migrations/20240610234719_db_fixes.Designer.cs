@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using budget_planner_api.Data;
@@ -11,9 +12,11 @@ using budget_planner_api.Data;
 namespace budget_planner_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240610234719_db_fixes")]
+    partial class db_fixes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -239,8 +242,8 @@ namespace budget_planner_api.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<DateTime>("OnDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly>("OnDate")
+                        .HasColumnType("date");
 
                     b.Property<int>("TypeId")
                         .HasColumnType("integer");
@@ -462,13 +465,13 @@ namespace budget_planner_api.Migrations
             modelBuilder.Entity("budget_planner_api.Models.Budget", b =>
                 {
                     b.HasOne("budget_planner_api.Models.Category", "Category")
-                        .WithMany("Budgets")
+                        .WithMany()
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("budget_planner_api.Models.Type", "Type")
-                        .WithMany("Budgets")
+                        .WithMany()
                         .HasForeignKey("TypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -476,16 +479,6 @@ namespace budget_planner_api.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("Type");
-                });
-
-            modelBuilder.Entity("budget_planner_api.Models.Category", b =>
-                {
-                    b.Navigation("Budgets");
-                });
-
-            modelBuilder.Entity("budget_planner_api.Models.Type", b =>
-                {
-                    b.Navigation("Budgets");
                 });
 #pragma warning restore 612, 618
         }

@@ -9,4 +9,6 @@ public class Type
 
     [Required, MaxLength(255)]
     public string Name { get; set; }
+    
+    public ICollection<Budget> Budgets { get; set; }
 }
