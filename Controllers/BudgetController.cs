@@ -65,4 +65,28 @@ public class BudgetController : ControllerBase
             return StatusCode(500, "Internal server error while deleting budget");
         }
     }
+    
+    [HttpGet("filter/type/{typeId}")]
+    [Authorize]
+    public async Task<IActionResult> FilterBudgetsByType(int typeId)
+    {
+        var budgets = await _budgetService.FilterBudgetsByTypeAsync(typeId);
+        return Ok(new {budgets = budgets});
+    }
+
+    [HttpGet("filter/category/{categoryId}")]
+    [Authorize]
+    public async Task<IActionResult> FilterBudgetsByCategory(int categoryId)
+    {
+        var budgets = await _budgetService.FilterBudgetsByCategoryAsync(categoryId);
+        return Ok(new {budgets = budgets});
+    }
+
+    [HttpGet("filter/daterange")]
+    [Authorize]
+    public async Task<IActionResult> FilterBudgetsByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    {
+        var budgets = await _budgetService.FilterBudgetsByDateRangeAsync(startDate, endDate);
+        return Ok(new {budgets = budgets});
+    }
 }

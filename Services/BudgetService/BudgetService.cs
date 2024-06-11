@@ -47,4 +47,25 @@ public class BudgetService : IBudgetService
             throw;
         }
     }
+    
+    public async Task<IEnumerable<BudgetModelDTO>> FilterBudgetsByTypeAsync(int typeId)
+    {
+        var results = await _budgetRepository.ListBudgetsAsync();
+        var filteredResults = results.Where(b => b.TypeId == typeId);
+        return _mapper.Map<IEnumerable<BudgetModelDTO>>(filteredResults);
+    }
+
+    public async Task<IEnumerable<BudgetModelDTO>> FilterBudgetsByCategoryAsync(int categoryId)
+    {
+        var results = await _budgetRepository.ListBudgetsAsync();
+        var filteredResults = results.Where(b => b.CategoryId == categoryId);
+        return _mapper.Map<IEnumerable<BudgetModelDTO>>(filteredResults);
+    }
+
+    public async Task<IEnumerable<BudgetModelDTO>> FilterBudgetsByDateRangeAsync(DateTime startDate, DateTime endDate)
+    {
+        var results = await _budgetRepository.ListBudgetsAsync();
+        var filteredResults = results.Where(b => b.OnDate >= startDate && b.OnDate <= endDate);
+        return _mapper.Map<IEnumerable<BudgetModelDTO>>(filteredResults);
+    }
 }
