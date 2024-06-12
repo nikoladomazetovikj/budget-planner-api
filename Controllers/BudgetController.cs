@@ -41,8 +41,6 @@ public class BudgetController : ControllerBase
 
         try
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            budgetDto.UserId = userId;  // Assuming BudgetModelDTO has a UserId property
             var newBudget = await _budgetService.AddBudgetAsync(budgetDto);
             return Created(string.Empty, newBudget);
         }

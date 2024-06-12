@@ -10,5 +10,9 @@ public class BudgetProfile : Profile
     {
         CreateMap<Budget, BudgetModelDTO>();
         CreateMap<BudgetModelDTO, Budget>();
+        
+        CreateMap<Budget, BudgetDetailModelDTO>()
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.Name));
     }
 }
