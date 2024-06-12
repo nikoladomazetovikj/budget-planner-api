@@ -15,7 +15,10 @@ public class BudgetRepository : IBudgetRepository
     
     public async Task<IEnumerable<Budget>> ListBudgetsAsync()
     {
-        return await _context.Budgets.ToListAsync();
+        return await _context.Budgets
+                            .Include(b => b.Category)
+                            .Include(b => b.Type)
+                            .ToListAsync();
     }
 
     public async Task<Budget> AddBudgetAsync(Budget budget)
