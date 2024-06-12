@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
+namespace budget_planner_api.Controllers;
+
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
