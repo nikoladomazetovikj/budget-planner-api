@@ -16,10 +16,11 @@ public class BudgetService : IBudgetService
         _mapper = mapper;
     }
     
-    public async Task<IEnumerable<BudgetModelDTO>> ListBudgetAsync()
+    public async Task<IEnumerable<BudgetModelDTO>> ListBudgetAsync(string userId)
     {
         var results = await _budgetRepository.ListBudgetsAsync();
-        return _mapper.Map<IEnumerable<BudgetModelDTO>>(results);
+        var filteredResults = results.Where(b => b.UserId == userId);  // Assuming Budget has a UserId property
+        return _mapper.Map<IEnumerable<BudgetModelDTO>>(filteredResults);
     }
 
     public async Task<BudgetModelDTO> AddBudgetAsync(BudgetModelDTO budgetDto)
@@ -29,17 +30,17 @@ public class BudgetService : IBudgetService
         return _mapper.Map<BudgetModelDTO>(result);
     }
 
-    public async Task<bool> DeleteBudgetAsync(int id)
+    public async Task<bool> DeleteBudgetAsync(int id, string userId)
     {
         try
         {
-            var result = await _budgetRepository.DeleteBudgetAsync(id);
-        
-            if (!result)
+            var budget = await _budgetRepository.GetBudgetByIdAsync(id);
+            if (budget == null || budget.UserId != userId)  
             {
                 return false;
             }
 
+            var result = await _budgetRepository.DeleteBudgetAsync(id);
             return result;
         }
         catch (Exception ex)
@@ -48,24 +49,24 @@ public class BudgetService : IBudgetService
         }
     }
     
-    public async Task<IEnumerable<BudgetModelDTO>> FilterBudgetsByTypeAsync(int typeId)
+    public async Task<IEnumerable<BudgetModelDTO>> FilterBudgetsByTypeAsync(int typeId, string userId)
     {
         var results = await _budgetRepository.ListBudgetsAsync();
-        var filteredResults = results.Where(b => b.TypeId == typeId);
+        var filteredResults = results.Where(b => b.TypeId == typeId && b.UserId == userId);
         return _mapper.Map<IEnumerable<BudgetModelDTO>>(filteredResults);
     }
 
-    public async Task<IEnumerable<BudgetModelDTO>> FilterBudgetsByCategoryAsync(int categoryId)
+    public async Task<IEnumerable<BudgetModelDTO>> FilterBudgetsByCategoryAsync(int categoryId, string userId)
     {
         var results = await _budgetRepository.ListBudgetsAsync();
-        var filteredResults = results.Where(b => b.CategoryId == categoryId);
+        var filteredResults = results.Where(b => b.CategoryId == categoryId && b.UserId == userId);
         return _mapper.Map<IEnumerable<BudgetModelDTO>>(filteredResults);
     }
 
-    public async Task<IEnumerable<BudgetModelDTO>> FilterBudgetsByDateRangeAsync(DateTime startDate, DateTime endDate)
+    public async Task<IEnumerable<BudgetModelDTO>> FilterBudgetsByDateRangeAsync(DateTime startDate, DateTime endDate, string userId)
     {
         var results = await _budgetRepository.ListBudgetsAsync();
-        var filteredResults = results.Where(b => b.OnDate >= startDate && b.OnDate <= endDate);
+        var filteredResults = results.Where(b => b.OnDate >= startDate && b.OnDate <= endDate && b.UserId == userId);
         return _mapper.Map<IEnumerable<BudgetModelDTO>>(filteredResults);
     }
 }

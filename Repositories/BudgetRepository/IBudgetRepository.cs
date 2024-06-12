@@ -9,4 +9,6 @@ public interface IBudgetRepository
     Task<Budget> AddBudgetAsync(Budget budget);
 
     Task<bool> DeleteBudgetAsync(int id);
+    
+    Task<Budget> GetBudgetByIdAsync(int id);
 }

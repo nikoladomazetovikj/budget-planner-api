@@ -42,4 +42,14 @@ public class BudgetRepository : IBudgetRepository
         var result = await _context.SaveChangesAsync();
         return result > 0; 
     }
+
+    public async Task<Budget> GetBudgetByIdAsync(int id)
+    {
+        return await _context.Budgets.FindAsync(id);
+    }
+
+    public async Task<IEnumerable<Budget>> ListBudgetsByUserIdAsync(string userId)
+    {
+        return await _context.Budgets.Where(b => b.UserId == userId).ToListAsync();
+    }
 }

@@ -1,9 +1,10 @@
-﻿using budget_planner_api.DTOs;
+﻿using System.Security.Claims;
+using budget_planner_api.DTOs;
+using budget_planner_api.Models;
 using budget_planner_api.Services.BudgetService;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-
-namespace budget_planner_api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -11,22 +12,24 @@ namespace budget_planner_api.Controllers;
 public class BudgetController : ControllerBase
 {
     private readonly IBudgetService _budgetService;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public BudgetController(IBudgetService budgetService)
+    public BudgetController(IBudgetService budgetService, UserManager<ApplicationUser> userManager)
     {
         _budgetService = budgetService;
+        _userManager = userManager;
     }
     
     [HttpGet]
-    [Authorize]
     public async Task<IActionResult> ListAllBudgets()
     {
-        var budgets = await _budgetService.ListBudgetAsync();
-        return Ok(new {budgets = budgets});
+        var authUserName = User.Identity.Name;
+        var user = await _userManager.FindByEmailAsync(authUserName);
+        var budgets = await _budgetService.ListBudgetAsync(user.Id);
+        return Ok(new { budgets = budgets });
     }
     
     [HttpPost]
-    [Authorize]
     public async Task<IActionResult> AddBudgetAsync([FromBody] BudgetModelDTO budgetDto)
     {
         if (!ModelState.IsValid)
@@ -36,9 +39,10 @@ public class BudgetController : ControllerBase
 
         try
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            budgetDto.UserId = userId;  // Assuming BudgetModelDTO has a UserId property
             var newBudget = await _budgetService.AddBudgetAsync(budgetDto);
             return Created(string.Empty, newBudget);
-
         }
         catch (Exception ex)
         {
@@ -46,14 +50,15 @@ public class BudgetController : ControllerBase
         }
     }
     
-    
     [HttpDelete("{id}")]
-    [Authorize]
     public async Task<IActionResult> DeleteBudget(int id)
     {
+        var authUserName = User.Identity.Name;
+        var user = await _userManager.FindByEmailAsync(authUserName);
+        
         try
         {
-            var result = await _budgetService.DeleteBudgetAsync(id);
+            var result = await _budgetService.DeleteBudgetAsync(id, user.Id);
             if (!result)
             {
                 return NotFound($"Budget with ID {id} not found.");
@@ -67,26 +72,29 @@ public class BudgetController : ControllerBase
     }
     
     [HttpGet("filter/type/{typeId}")]
-    [Authorize]
     public async Task<IActionResult> FilterBudgetsByType(int typeId)
     {
-        var budgets = await _budgetService.FilterBudgetsByTypeAsync(typeId);
-        return Ok(new {budgets = budgets});
+        var authUserName = User.Identity.Name;
+        var user = await _userManager.FindByEmailAsync(authUserName);
+        var budgets = await _budgetService.FilterBudgetsByTypeAsync(typeId, user.Id);
+        return Ok(new { budgets = budgets });
     }
 
     [HttpGet("filter/category/{categoryId}")]
-    [Authorize]
     public async Task<IActionResult> FilterBudgetsByCategory(int categoryId)
     {
-        var budgets = await _budgetService.FilterBudgetsByCategoryAsync(categoryId);
-        return Ok(new {budgets = budgets});
+        var authUserName = User.Identity.Name;
+        var user = await _userManager.FindByEmailAsync(authUserName);
+        var budgets = await _budgetService.FilterBudgetsByCategoryAsync(categoryId, user.Id);
+        return Ok(new { budgets = budgets });
     }
 
     [HttpGet("filter/daterange")]
-    [Authorize]
     public async Task<IActionResult> FilterBudgetsByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
     {
-        var budgets = await _budgetService.FilterBudgetsByDateRangeAsync(startDate, endDate);
-        return Ok(new {budgets = budgets});
+        var authUserName = User.Identity.Name;
+        var user = await _userManager.FindByEmailAsync(authUserName);
+        var budgets = await _budgetService.FilterBudgetsByDateRangeAsync(startDate, endDate, user.Id);
+        return Ok(new { budgets = budgets });
     }
 }
