@@ -18,6 +18,9 @@ public class Budget
     public DateTime OnDate { get; set; }
     
     [Required]
+    public decimal Price { get; set; }
+    
+    [Required]
     public int CategoryId { get; set; }
     public Category Category { get; set; }
     

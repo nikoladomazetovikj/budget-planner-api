@@ -8,5 +8,6 @@ public class BudgetModelDTO
     public DateTime OnDate { get; set; }
     public int CategoryId { get; set; }
     public int TypeId { get; set; }
+    public decimal Price { get; set; }
     public string UserId { get; set; }
 }
